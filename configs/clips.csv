@@ -1,0 +1,9 @@
+# One row per clip. Lines starting with # are ignored.
+# clip   = name of the video file without .mp4 (this is how output files are named)
+# video  = path of the .mp4 inside the videos folder
+# line   = counting line x1,y1,x2,y2 as fractions of the frame; empty = 0,0.5,1,0.5. Check it with preview_line.py
+# lighting = day / night / unknown     weather = sunny / cloudy / rainy / unknown     density = low / medium / high / unknown
+# source = ua_detrac / ai_city
+clip,video,line,lighting,weather,density,source,notes
+# MVI_20011,ua_detrac/MVI_20011.mp4,"0,0.55,1,0.55",day,cloudy,medium,ua_detrac,example row: delete the leading # and edit
+# cam01_clip1,ai_city/cam01_clip1.mp4,,day,sunny,high,ai_city,example row
