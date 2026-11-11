@@ -49,6 +49,21 @@ def test_peak_flow_agreement():
     assert row["correlation"] > 0.8
 
 
+def test_peak_gap_is_zero_when_the_systems_peak_bin_ties_the_true_peak():
+    # truth has two equally busy bins (3 each); the system picks the later one
+    truth = crossings([(t, "car", "A_to_B") for t in (5, 35, 36, 37, 65, 66, 67, 95)])
+    system = crossings([(t, "car", "A_to_B") for t in (5, 35, 36, 65, 66, 67, 95)])
+    row = peak_flow_row("c1", system, truth, duration=120, bin_s=30)
+    assert row["peak_match"] is False and row["peak_gap_vehicles"] == 0
+
+
+def test_peak_gap_counts_the_vehicles_missed_at_the_true_peak():
+    truth = crossings([(t, "car", "A_to_B") for t in (5, 35, 36, 37, 38, 65, 66, 95)])   # bins: 1, 4, 2, 1
+    system = crossings([(t, "car", "A_to_B") for t in (5, 35, 65, 66, 67, 95)])           # bins: 1, 1, 3, 1
+    row = peak_flow_row("c1", system, truth, duration=120, bin_s=30)
+    assert row["true_peak_count"] == 4 and row["true_count_at_system_peak"] == 2 and row["peak_gap_vehicles"] == 2
+
+
 def test_short_clip_is_reported_not_crashed():
     row = peak_flow_row("c1", crossings([(1, "car", "A_to_B")]), crossings([(1, "car", "A_to_B")]), 30, 30)
     assert "too few" in row["note"]

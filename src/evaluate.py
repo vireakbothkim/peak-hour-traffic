@@ -9,7 +9,7 @@ Clips without a ground-truth file are skipped.
 Outputs (written to --out-dir):
   eval_by_clip.csv     system vs true count with error, for the total, each direction and each class
   eval_by_group.csv    errors grouped by lighting, weather, density and source
-  eval_peak_flow.csv   how well the per-bin flow follows the ground truth (correlation, peak match)
+  eval_peak_flow.csv   how well the per-bin flow follows the ground truth (correlation, peak match, peak gap in vehicles)
 
 Definitions:
   absolute error = |system - true|          percentage error = |system - true| / true x 100
@@ -90,10 +90,14 @@ def peak_flow_row(clip, system, truth, duration, bin_s):
         return {**row, "note": "too few full bins for a peak-flow comparison; use a smaller --bin-seconds"}
     corr = float(np.corrcoef(s, g)[0, 1]) if s.std() > 0 and g.std() > 0 else np.nan
     peak_s, peak_g = int(s.idxmax()), int(g.idxmax())
+    # peak gap: how many vehicles busier the true peak bin is than the bin the system calls busiest (0 = as busy)
+    true_at_system_peak, true_peak = int(g.iloc[peak_s]), int(g.iloc[peak_g])
     return {**row, "correlation": round(corr, 3) if corr == corr else np.nan,
             "mean_abs_error_per_bin": round(float((s - g).abs().mean()), 2),
             "system_peak_bin": sys_bins.loc[peak_s, "bin_start"], "true_peak_bin": gt_bins.loc[peak_g, "bin_start"],
-            "peak_match": peak_s == peak_g, "peak_within_1_bin": abs(peak_s - peak_g) <= 1, "note": ""}
+            "peak_match": peak_s == peak_g, "peak_within_1_bin": abs(peak_s - peak_g) <= 1,
+            "true_count_at_system_peak": true_at_system_peak, "true_peak_count": true_peak,
+            "peak_gap_vehicles": true_peak - true_at_system_peak, "note": ""}
 
 
 def parse_args():

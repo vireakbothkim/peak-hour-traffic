@@ -1,3 +1,7 @@
 __pycache__/
 *.pyc
 .DS_Store
+*.mp4
+outputs/
+ground_truth/
+*.pt

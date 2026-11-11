@@ -10,7 +10,7 @@ video -> detect_track.py -> crossings.csv -> aggregate.py -> bins.csv + summary.
    ground truth (gt_from_detrac.py) -----> evaluate.py -> error tables, peak-flow agreement
 ```
 
-No training is needed: the model is pretrained on COCO and already knows car, motorcycle, bus and truck.
+No training is needed: the model is pretrained on COCO and already knows car, bus and truck. (COCO also knows motorcycles, but they are left out: our datasets do not label them.)
 Limitation to state in the report: the datasets do not contain Cambodian vehicle types such as remorques, rickshaws or motorbikes with carts.
 
 ## Repo layout
@@ -18,6 +18,7 @@ Limitation to state in the report: the datasets do not contain Cambodian vehicle
 ```
 src/
   counting.py          line-crossing logic (the "virtual line"), tested
+  ignored.py           skip vehicles inside UA-DETRAC's ignored regions (used by detect_track.py via --ignore-xml)
   detect_track.py      video in -> crossings.csv out (chunked, resumable, automatic frame skipping)
   aggregate.py         crossings.csv -> bins.csv (+ summary.json): flow per bin, per direction, per class, peak flow
   plots.py             bins.csv -> chart: flow per bin stacked by class, peak outlined, class mix
@@ -33,7 +34,7 @@ configs/
 notebooks/
   run_on_colab.ipynb   runs everything on Google Colab
 tests/
-  run_all.py           python tests/run_all.py   (22 tests)
+  run_all.py           python tests/run_all.py   (27 tests)
 ```
 
 ## File formats (agree on these, then work in parallel)
@@ -45,7 +46,7 @@ tests/
 | `time_s` | seconds from the start of the video when the vehicle crossed the line |
 | `chunk` | which 10-minute chunk it was processed in (0 for ground truth) |
 | `track_id` | the tracker's ID for the vehicle (unique inside a chunk) |
-| `class` | car, motorcycle, bus or truck |
+| `class` | car, bus or truck (motorcycles are not counted) |
 | `direction` | `A_to_B` or `B_to_A` |
 
 **bins.csv** (from `aggregate.py`): `bin_start` (mm:ss), `bin_start_s`, `bin_length_s`, `A_to_B`, `B_to_A`, `car`, `motorcycle`, `bus`, `truck`, `total`.
@@ -68,7 +69,7 @@ so `A_to_B` means moving down the image. `preview_line.py` shows A and B on a re
    `python src/frames_to_video.py --frames data/DETRAC-Images/MVI_20011 --out data/MVI_20011.mp4`
 2. **Choose the counting line** for each clip with `preview_line.py` and write it in `configs/clips.csv` with the conditions.
 3. **Run all clips:**
-   `python src/run_batch.py --clips configs/clips.csv --videos-dir <videos folder> --out-dir outputs`
+   `python src/run_batch.py --clips configs/clips.csv --videos-dir <videos folder> --out-dir outputs --annotations-dir <annotations folder> --stride 1`
    You get, per clip, `_crossings.csv`, `_bins.csv`, `_bins_summary.json` and `_chart.png`, plus `all_clips_summary.csv`.
 4. **Build ground truth** (UA-DETRAC) with the same lines as in clips.csv, for all clips at once:
    `python src/build_ground_truth.py --clips configs/clips.csv --annotations-dir annotations --ground-truth-dir ground_truth`
@@ -83,7 +84,8 @@ On Colab, `notebooks/run_on_colab.ipynb` does all of this. Run it on one short c
 - absolute error = |system - true|, percentage error = |system - true| / true x 100
 - bias % = (sum of system - sum of true) / sum of true x 100 (negative = under-counting)
 - `eval_by_group.csv` groups the errors by lighting, weather, density and source, with the share of clips within 10% error
-- `eval_peak_flow.csv`: correlation between the system's and the true flow per bin, and whether the busiest bin matches.
+- `eval_peak_flow.csv`: correlation between the system's and the true flow per bin, whether the busiest bin matches, and the peak gap in vehicles (0 = the system's busiest bin is as busy as the true peak;
+  short clips often have near-tied bins, so an exact bin match is strict).
   Use a bin size that gives at least 3 full bins per clip (for 1-minute clips use 10 or 15 seconds)
 
 ## Important notes and limits
@@ -103,12 +105,13 @@ On Colab, `notebooks/run_on_colab.ipynb` does all of this. Run it on one short c
 
 | Setting | Default | Notes |
 |---|---|---|
-| `--stride` | auto | aims for about 8 processed frames per second: every 3rd frame at 25 fps, every frame at 10 fps |
+| `--stride` | auto | aims for about 8 processed frames per second: every 3rd frame at 25 fps, every frame at 10 fps. **Use `--stride 1` for our short UA-DETRAC clips**: on one clip, every 3rd frame counted 54 vehicles vs 76 true, every frame counted 82 |
 | `--line` | `0,0.5,1,0.5` | put it where vehicles cross it cleanly, away from the edges |
 | `--model` | `yolov8s.pt` | `yolov8n.pt` is faster and less accurate, `yolov8m.pt` slower and more accurate |
 | `--conf` | 0.3 | lower finds more vehicles but adds false detections (detect_track.py and run_batch.py) |
 | `--tracker` | bytetrack.yaml | `botsort.yaml` is the alternative (detect_track.py and run_batch.py) |
 | `--bin-seconds` | 60 | 5 to 15 for 1-minute clips |
+| `--ignore-xml` | none | UA-DETRAC annotation XML: vehicles inside its ignored regions are not counted (`run_batch.py` finds it with `--annotations-dir`) |
 
 Changing the model, line, stride, confidence or tracker after a partial run needs `--force` (it starts over),
 because chunks made with different settings must not be mixed. To compare settings without losing earlier results,
