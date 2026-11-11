@@ -14,7 +14,7 @@ from ultralytics import YOLO
 
 from counting import LineCounter
 
-VEHICLE_CLASSES = [2, 3, 5, 7]  # car, motorcycle, bus, truck
+VEHICLE_CLASSES = [2, 5, 7]  # car, bus, truck: same as detect_track.py (motorcycles are not counted)
 
 
 def parse_args():
@@ -27,6 +27,7 @@ def parse_args():
     ap.add_argument("--seconds", type=float, default=30, help="length of the demo clip")
     ap.add_argument("--stride", type=int, default=1, help="1 = every frame (smoothest)")
     ap.add_argument("--conf", type=float, default=0.3)
+    ap.add_argument("--tracker", default="bytetrack.yaml", help="same default as detect_track.py")
     ap.add_argument("--device", default=None)
     return ap.parse_args()
 
@@ -61,7 +62,7 @@ def main():
         if not ok:
             continue
         result = model.track(frame, persist=True, classes=VEHICLE_CLASSES, conf=args.conf,
-                             device=args.device, verbose=False)[0]
+                             tracker=args.tracker, device=args.device, verbose=False)[0]
         boxes = result.boxes
         if boxes is not None and boxes.id is not None:
             for tid, (cx, cy, _w, _h) in zip(boxes.id.int().tolist(), boxes.xywh.tolist()):
