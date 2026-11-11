@@ -28,9 +28,11 @@ import cv2
 from ultralytics import YOLO
 
 from counting import LineCounter
+from ignored import in_ignored, load_ignored_regions
 
-# COCO class ids: 2 car, 3 motorcycle, 5 bus, 7 truck
-VEHICLE_CLASSES = [2, 3, 5, 7]
+# COCO class ids: 2 car, 5 bus, 7 truck. Motorcycles (3) are left out on purpose: UA-DETRAC and AI City do not
+# label them, so counting them would only add false positives when compared with the ground truth.
+VEHICLE_CLASSES = [2, 5, 7]
 FIELDS = ["time_s", "chunk", "track_id", "class", "direction"]
 
 
@@ -46,6 +48,8 @@ def parse_args():
     ap.add_argument("--conf", type=float, default=0.3, help="detection confidence threshold")
     ap.add_argument("--tracker", default="bytetrack.yaml", help="bytetrack.yaml or botsort.yaml")
     ap.add_argument("--chunk-minutes", type=float, default=10, help="size of each resumable chunk")
+    ap.add_argument("--ignore-xml", default=None,
+                    help="UA-DETRAC annotation XML; vehicles inside its ignored regions are not counted")
     ap.add_argument("--limit-seconds", type=float, default=0, help="only process the first N seconds (0 = all)")
     ap.add_argument("--device", default=None, help="e.g. 0 for the first GPU, cpu, mps (default: automatic)")
     ap.add_argument("--force", action="store_true", help="delete earlier chunks and start over")
@@ -69,6 +73,7 @@ def write_csv(path, rows):
 def process_chunk(args, video, chunk_idx, start, end, fps, line_px, stride):
     model = YOLO(args.model)  # new model object = fresh tracker, so chunks are independent
     counter = LineCounter(*line_px)
+    regions = load_ignored_regions(args.ignore_xml) if args.ignore_xml else []
     cap = cv2.VideoCapture(video)
     if start > 0:
         cap.set(cv2.CAP_PROP_POS_FRAMES, start)
@@ -92,6 +97,8 @@ def process_chunk(args, video, chunk_idx, start, end, fps, line_px, stride):
         ids = boxes.id.int().tolist()
         classes = boxes.cls.int().tolist()
         for track_id, cls, (cx, cy, _w, _h) in zip(ids, classes, boxes.xywh.tolist()):
+            if in_ignored(cx, cy, regions):
+                continue  # inside an ignored region: not counted
             direction = counter.update(track_id, cx, cy)
             if direction:
                 rows.append({"time_s": round(frame_idx / fps, 2), "chunk": chunk_idx,
@@ -129,7 +136,8 @@ def main():
     # Refuse to mix chunks made with different settings
     config = {"video": name, "model": args.model, "line": args.line, "stride": stride,
               "conf": args.conf, "tracker": args.tracker, "chunk_minutes": args.chunk_minutes,
-              "limit_seconds": args.limit_seconds}
+              "limit_seconds": args.limit_seconds, "classes": VEHICLE_CLASSES,
+              "ignore_xml": args.ignore_xml}
     config_path = chunk_dir / "run_config.json"
     if config_path.exists():
         if json.loads(config_path.read_text()) != config:

@@ -44,6 +44,8 @@ def parse_args():
     ap.add_argument("--tracker", default="bytetrack.yaml", help="bytetrack.yaml or botsort.yaml")
     ap.add_argument("--force", action="store_true", help="delete earlier chunks of each clip and start over")
     ap.add_argument("--limit-seconds", type=float, default=0, help="only process the first N seconds of each clip")
+    ap.add_argument("--annotations-dir", default=None,
+                    help="folder with UA-DETRAC annotation XMLs named like the videos; used to skip their ignored regions")
     ap.add_argument("--device", default=None)
     return ap.parse_args()
 
@@ -78,6 +80,10 @@ def main():
             detect += ["--device", args.device]
         if args.force:
             detect += ["--force"]
+        if args.annotations_dir:
+            xml = Path(args.annotations_dir) / f"{video.stem}.xml"
+            if xml.exists():
+                detect += ["--ignore-xml", xml]
         stem = video.stem
         crossings, bins = out_dir / f"{stem}_crossings.csv", out_dir / f"{stem}_bins.csv"
         steps_ok = (

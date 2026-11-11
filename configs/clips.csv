@@ -7,3 +7,15 @@
 clip,video,line,lighting,weather,density,source,notes
 # MVI_20011,ua_detrac/MVI_20011.mp4,"0,0.55,1,0.55",day,cloudy,medium,ua_detrac,example row: delete the leading # and edit
 # cam01_clip1,ai_city/cam01_clip1.mp4,,day,sunny,high,ai_city,example row
+MVI_41063,ua_detrac/MVI_41063.mp4,,day,sunny,high,ua_detrac,
+MVI_41073,ua_detrac/MVI_41073.mp4,,day,sunny,high,ua_detrac,
+MVI_20011,ua_detrac/MVI_20011.mp4,,day,sunny,high,ua_detrac,unstable camera
+MVI_40141,ua_detrac/MVI_40141.mp4,,day,cloudy,low,ua_detrac,
+MVI_40201,ua_detrac/MVI_40201.mp4,,day,cloudy,high,ua_detrac,
+MVI_40241,ua_detrac/MVI_40241.mp4,,day,cloudy,high,ua_detrac,
+MVI_39761,ua_detrac/MVI_39761.mp4,,night,unknown,low,ua_detrac,
+MVI_40732,ua_detrac/MVI_40732.mp4,,night,unknown,medium,ua_detrac,
+MVI_40962,ua_detrac/MVI_40962.mp4,,night,unknown,medium,ua_detrac,
+MVI_63521,ua_detrac/MVI_63521.mp4,,day,rainy,medium,ua_detrac,
+MVI_63544,ua_detrac/MVI_63544.mp4,,day,rainy,low,ua_detrac,
+MVI_40871,ua_detrac/MVI_40871.mp4,,day,rainy,low,ua_detrac,unstable camera
