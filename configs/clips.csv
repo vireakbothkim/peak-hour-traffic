@@ -19,3 +19,6 @@ MVI_40962,ua_detrac/MVI_40962.mp4,,night,unknown,medium,ua_detrac,
 MVI_63521,ua_detrac/MVI_63521.mp4,,day,rainy,medium,ua_detrac,
 MVI_63544,ua_detrac/MVI_63544.mp4,,day,rainy,low,ua_detrac,
 MVI_40871,ua_detrac/MVI_40871.mp4,,day,rainy,low,ua_detrac,unstable camera
+cam_5,ai_city/AIC21_Track1_Vehicle_Counting/Dataset_A/cam_5.mp4,,day,sunny,unknown,ai_city,first 10 min only (--limit-seconds 600); intersection; no accuracy ground truth except the 1-min sample
+cam_5_rain,ai_city/AIC21_Track1_Vehicle_Counting/Dataset_A/cam_5_rain.mp4,,day,rainy,unknown,ai_city,same camera as cam_5
+cam_5_dawn,ai_city/AIC21_Track1_Vehicle_Counting/Dataset_A/cam_5_dawn.mp4,,dawn,unknown,unknown,ai_city,same camera as cam_5; low light and sun glare
